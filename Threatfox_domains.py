@@ -5,9 +5,11 @@ ThreatFox DOMAIN IOC Crawler (JSON)
 Source:
 https://threatfox.abuse.ch/export/json/domains/recent/
 
-- Fetches recent domain-based IOCs
-- Parses ThreatFox JSON correctly
-- Outputs clean CSV for automation / GitHub Actions
+Improvements:
+- Confidence filtering
+- Deduplication
+- Normalized output
+- Always produces CSV (CI-safe)
 """
 
 import requests
@@ -22,9 +24,24 @@ THREATFOX_JSON_URL = "https://threatfox.abuse.ch/export/json/domains/recent/"
 OUTPUT_DIR = "output"
 OUTPUT_FILE = "ThreatFox_Domain.csv"
 
+CONFIDENCE_THRESHOLD = 75  # Only high-confidence IOCs
+
 HEADERS = {
     "User-Agent": "ThreatIntel-Crawler/1.0"
 }
+
+FIELDNAMES = [
+    "ioc",
+    "ioc_type",
+    "threat_type",
+    "malware",
+    "confidence_level",
+    "reference",
+    "first_seen",
+    "last_seen",
+    "source",
+    "collection_date"
+]
 
 # =====================
 # FETCH DATA
@@ -34,82 +51,75 @@ def fetch_threatfox_json():
     response.raise_for_status()
     return response.json()
 
-
 # =====================
 # PARSE JSON
 # =====================
 def parse_json(raw_json):
     records = []
+    seen_iocs = set()
 
-    # ThreatFox JSON stores data under "data"
     ioc_data = raw_json.get("data", {})
+    collection_time = datetime.utcnow().isoformat()
 
-    if not ioc_data:
-        return records
+    for _, entry in ioc_data.items():
+        ioc = entry.get("ioc", "").strip().lower()
+        ioc_type = entry.get("ioc_type", "").strip().lower()
+        confidence = int(entry.get("confidence_level", 0))
 
-    for ioc_id, entry in ioc_data.items():
+        # Strict filtering
+        if not ioc or ioc_type != "domain":
+            continue
+        if confidence < CONFIDENCE_THRESHOLD:
+            continue
+        if ioc in seen_iocs:
+            continue
+
+        seen_iocs.add(ioc)
+
         records.append({
-            "ioc": entry.get("ioc", "").strip(),
-            "ioc_type": entry.get("ioc_type", "").strip(),
+            "ioc": ioc,
+            "ioc_type": "domain",
             "threat_type": entry.get("threat_type", "").strip(),
             "malware": entry.get("malware", "").strip(),
-            "confidence_level": entry.get("confidence_level", ""),
-            "reference": entry.get("reference", ""),
-            "first_seen": entry.get("first_seen", ""),
-            "last_seen": entry.get("last_seen", ""),
+            "confidence_level": confidence,
+            "reference": entry.get("reference", "").strip(),
+            "first_seen": entry.get("first_seen", "").strip(),
+            "last_seen": entry.get("last_seen", "").strip(),
             "source": "ThreatFox",
-            "collection_date": datetime.utcnow().isoformat()
+            "collection_date": collection_time
         })
+
+    # Sort newest first
+    records.sort(key=lambda x: x["last_seen"], reverse=True)
 
     return records
 
-
 # =====================
-# SAVE CSV
+# SAVE CSV (ALWAYS)
 # =====================
 def save_csv(data):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
 
-    if not data:
-        print("[!] No IOCs collected")
-        return
-
     with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "ioc",
-                "ioc_type",
-                "threat_type",
-                "malware",
-                "confidence_level",
-                "reference",
-                "first_seen",
-                "last_seen",
-                "source",
-                "collection_date"
-            ]
-        )
+        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
         writer.writeheader()
         writer.writerows(data)
 
-    print(f"[+] Saved {len(data)} domain IOCs → {output_path}")
-
+    print(f"[+] Saved {len(data)} high-confidence domain IOCs → {output_path}")
 
 # =====================
 # MAIN
 # =====================
 def main():
-    print("[*] Fetching ThreatFox DOMAIN IOCs (JSON)...")
+    print("[*] Fetching ThreatFox DOMAIN IOCs...")
     raw_json = fetch_threatfox_json()
 
-    print("[*] Parsing IOCs...")
+    print("[*] Processing & filtering IOCs...")
     iocs = parse_json(raw_json)
 
     print("[*] Writing output...")
     save_csv(iocs)
-
 
 if __name__ == "__main__":
     main()
