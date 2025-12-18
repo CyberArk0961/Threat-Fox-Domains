@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-ThreatFox DOMAIN IOC Crawler (JSON)
+ThreatFox DOMAIN IOC Crawler (CSV)
 
 Source:
-https://threatfox.abuse.ch/export/json/domains/recent/
+https://threatfox.abuse.ch/export/csv/domains/recent/
 
-Improvements:
-- Confidence filtering
-- Deduplication
-- Normalized output
-- Always produces CSV (CI-safe)
+- Fetches recent domain-based IOCs
+- Handles ThreatFox CSV quirks (# comments)
+- Produces stable CSV output for GitHub Actions
 """
 
 import requests
@@ -20,11 +18,9 @@ from datetime import datetime
 # =====================
 # CONFIG
 # =====================
-THREATFOX_JSON_URL = "https://threatfox.abuse.ch/export/json/domains/recent/"
+THREATFOX_CSV_URL = "https://threatfox.abuse.ch/export/csv/domains/recent/"
 OUTPUT_DIR = "output"
 OUTPUT_FILE = "ThreatFox_Domain.csv"
-
-CONFIDENCE_THRESHOLD = 75  # Only high-confidence IOCs
 
 HEADERS = {
     "User-Agent": "ThreatIntel-Crawler/1.0"
@@ -44,53 +40,59 @@ FIELDNAMES = [
 ]
 
 # =====================
-# FETCH DATA
+# FETCH CSV
 # =====================
-def fetch_threatfox_json():
-    response = requests.get(THREATFOX_JSON_URL, headers=HEADERS, timeout=60)
+def fetch_threatfox_csv():
+    response = requests.get(THREATFOX_CSV_URL, headers=HEADERS, timeout=60)
     response.raise_for_status()
-    return response.json()
+    return response.text
 
 # =====================
-# PARSE JSON
+# PARSE CSV
 # =====================
-def parse_json(raw_json):
+def parse_csv(raw_csv):
     records = []
     seen_iocs = set()
-
-    ioc_data = raw_json.get("data", {})
     collection_time = datetime.utcnow().isoformat()
 
-    for _, entry in ioc_data.items():
-        ioc = entry.get("ioc", "").strip().lower()
-        ioc_type = entry.get("ioc_type", "").strip().lower()
-        confidence = int(entry.get("confidence_level", 0))
+    reader = csv.reader(
+        line for line in raw_csv.splitlines()
+        if line and not line.startswith("#")
+    )
 
-        # Strict filtering
-        if not ioc or ioc_type != "domain":
+    header = next(reader, None)
+    if not header:
+        return records
+
+    for row in reader:
+        # Expected ThreatFox domain CSV format
+        # ioc,ioc_type,threat_type,malware,confidence_level,reference,first_seen,last_seen
+        if len(row) < 8:
             continue
-        if confidence < CONFIDENCE_THRESHOLD:
+
+        ioc = row[0].strip().lower()
+        confidence = row[4].strip()
+
+        if not ioc:
             continue
+
+        # Deduplicate
         if ioc in seen_iocs:
             continue
-
         seen_iocs.add(ioc)
 
         records.append({
             "ioc": ioc,
-            "ioc_type": "domain",
-            "threat_type": entry.get("threat_type", "").strip(),
-            "malware": entry.get("malware", "").strip(),
+            "ioc_type": row[1].strip(),
+            "threat_type": row[2].strip(),
+            "malware": row[3].strip(),
             "confidence_level": confidence,
-            "reference": entry.get("reference", "").strip(),
-            "first_seen": entry.get("first_seen", "").strip(),
-            "last_seen": entry.get("last_seen", "").strip(),
+            "reference": row[5].strip(),
+            "first_seen": row[6].strip(),
+            "last_seen": row[7].strip(),
             "source": "ThreatFox",
             "collection_date": collection_time
         })
-
-    # Sort newest first
-    records.sort(key=lambda x: x["last_seen"], reverse=True)
 
     return records
 
@@ -106,17 +108,17 @@ def save_csv(data):
         writer.writeheader()
         writer.writerows(data)
 
-    print(f"[+] Saved {len(data)} high-confidence domain IOCs → {output_path}")
+    print(f"[+] Saved {len(data)} domain IOCs → {output_path}")
 
 # =====================
 # MAIN
 # =====================
 def main():
-    print("[*] Fetching ThreatFox DOMAIN IOCs...")
-    raw_json = fetch_threatfox_json()
+    print("[*] Fetching ThreatFox DOMAIN IOCs (CSV)...")
+    raw_csv = fetch_threatfox_csv()
 
-    print("[*] Processing & filtering IOCs...")
-    iocs = parse_json(raw_json)
+    print("[*] Parsing domain IOCs...")
+    iocs = parse_csv(raw_csv)
 
     print("[*] Writing output...")
     save_csv(iocs)
