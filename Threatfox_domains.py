@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
-ThreatFox DOMAIN IOC Crawler (CSV)
+ThreatFox DOMAIN IOC Crawler (POSITIONAL – FINAL)
 
 Source:
 https://threatfox.abuse.ch/export/csv/domains/recent/
 
-- Fetches recent domain-based IOCs
-- Handles ThreatFox CSV quirks (# comments)
-- Produces stable CSV output for GitHub Actions
+IMPORTANT:
+- Feed has NO header row
+- Rows are comma-separated
+- Must be parsed positionally
 """
 
 import requests
 import csv
 import os
-from datetime import datetime
 
 # =====================
 # CONFIG
 # =====================
-THREATFOX_CSV_URL = "https://threatfox.abuse.ch/export/csv/domains/recent/"
+THREATFOX_DOMAIN_URL = "https://threatfox.abuse.ch/export/csv/domains/recent/"
 OUTPUT_DIR = "output"
 OUTPUT_FILE = "ThreatFox_Domain.csv"
 
@@ -26,85 +26,76 @@ HEADERS = {
     "User-Agent": "ThreatIntel-Crawler/1.0"
 }
 
+# Exact ThreatFox column order (same as IP & URL feeds)
 FIELDNAMES = [
-    "ioc",
-    "ioc_type",
-    "threat_type",
-    "malware",
-    "confidence_level",
-    "reference",
-    "first_seen",
-    "last_seen",
-    "source",
-    "collection_date"
+    "first_seen_utc",     # 0
+    "ioc_id",             # 1
+    "ioc_value",          # 2  (DOMAIN)
+    "ioc_type",           # 3
+    "threat_type",        # 4
+    "fk_malware",         # 5
+    "malware_alias",      # 6
+    "malware_printable",  # 7
+    "last_seen_utc",      # 8
+    "confidence_level",   # 9
+    "reference",          # 10
+    "tags",               # 11
+    "anonymous",          # 12
+    "reporter"            # 13
 ]
 
 # =====================
-# FETCH CSV
+# FETCH
 # =====================
 def fetch_threatfox_csv():
-    response = requests.get(THREATFOX_CSV_URL, headers=HEADERS, timeout=60)
-    response.raise_for_status()
-    return response.text
+    r = requests.get(THREATFOX_DOMAIN_URL, headers=HEADERS, timeout=60)
+    r.raise_for_status()
+    return r.text.lstrip("\ufeff")
 
 # =====================
-# PARSE CSV
+# PARSE (POSITIONAL)
 # =====================
 def parse_csv(raw_csv):
     records = []
-    seen_iocs = set()
-    collection_time = datetime.utcnow().isoformat()
+    seen_ids = set()
 
     reader = csv.reader(
-        line for line in raw_csv.splitlines()
-        if line and not line.startswith("#")
+        (line for line in raw_csv.splitlines() if line and not line.startswith("#")),
+        delimiter=",",
+        quotechar='"'
     )
 
-    header = next(reader, None)
-    if not header:
-        return records
-
     for row in reader:
-        # Expected ThreatFox domain CSV format
-        # ioc,ioc_type,threat_type,malware,confidence_level,reference,first_seen,last_seen
-        if len(row) < 8:
+        if len(row) < 14:
             continue
 
-        ioc = row[0].strip().lower()
-        confidence = row[4].strip()
-
-        if not ioc:
+        ioc_id = row[1].strip()
+        if not ioc_id or ioc_id in seen_ids:
             continue
+        seen_ids.add(ioc_id)
 
-        # Deduplicate
-        if ioc in seen_iocs:
-            continue
-        seen_iocs.add(ioc)
-
-        records.append({
-            "ioc": ioc,
-            "ioc_type": row[1].strip(),
-            "threat_type": row[2].strip(),
-            "malware": row[3].strip(),
-            "confidence_level": confidence,
-            "reference": row[5].strip(),
-            "first_seen": row[6].strip(),
-            "last_seen": row[7].strip(),
-            "source": "ThreatFox",
-            "collection_date": collection_time
-        })
+        record = dict(zip(FIELDNAMES, [c.strip() for c in row[:14]]))
+        records.append(record)
 
     return records
 
 # =====================
-# SAVE CSV (ALWAYS)
+# SAVE CSV
 # =====================
 def save_csv(data):
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     output_path = os.path.join(OUTPUT_DIR, OUTPUT_FILE)
 
+    if not data:
+        print("[!] No domain IOCs collected")
+        return
+
     with open(output_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
+        writer = csv.DictWriter(
+            f,
+            fieldnames=FIELDNAMES,
+            quoting=csv.QUOTE_ALL
+        )
         writer.writeheader()
         writer.writerows(data)
 
@@ -114,10 +105,10 @@ def save_csv(data):
 # MAIN
 # =====================
 def main():
-    print("[*] Fetching ThreatFox DOMAIN IOCs (CSV)...")
+    print("[*] Fetching ThreatFox DOMAIN IOCs...")
     raw_csv = fetch_threatfox_csv()
 
-    print("[*] Parsing domain IOCs...")
+    print("[*] Parsing DOMAIN IOCs (positional)...")
     iocs = parse_csv(raw_csv)
 
     print("[*] Writing output...")
