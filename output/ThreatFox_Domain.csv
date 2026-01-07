@@ -1,5 +1,4 @@
 "first_seen_utc","ioc_id","ioc_value","ioc_type","threat_type","fk_malware","malware_alias","malware_printable","last_seen_utc","confidence_level","reference","tags","anonymous","reporter"
-"2026-01-06 20:24:42","""1692202""","""nouryon.com""","""domain""","""botnet_cc""","""win.asyncrat""","""None""","""AsyncRAT""","""""","""75""","""False""","""https://bazaar.abuse.ch/sample/9d620e2a5b4a61ec9d8705516e36c9d5dcff7a4c8d441afeeec86ca9a6d27fe4/""","""asyncrat""","""0"""
 "2026-01-06 20:15:59","""1692201""","""techsanjay.in.net""","""domain""","""botnet_cc""","""win.asyncrat""","""None""","""AsyncRAT""","""""","""75""","""False""","""https://bazaar.abuse.ch/sample/8994c8fd4c22d82bcc82fd7cfc226b443970511966ea488fcb5823bcc63ed697/""","""asyncrat""","""0"""
 "2026-01-06 20:14:35","""1692200""","""pqs.uk.net""","""domain""","""botnet_cc""","""win.asyncrat""","""None""","""AsyncRAT""","""""","""75""","""False""","""https://bazaar.abuse.ch/sample/8994c8fd4c22d82bcc82fd7cfc226b443970511966ea488fcb5823bcc63ed697/""","""asyncrat""","""0"""
 "2026-01-06 20:13:49","""1692199""","""karvacolud.in.net""","""domain""","""botnet_cc""","""win.asyncrat""","""None""","""AsyncRAT""","""""","""75""","""False""","""https://bazaar.abuse.ch/sample/8994c8fd4c22d82bcc82fd7cfc226b443970511966ea488fcb5823bcc63ed697/""","""asyncrat""","""0"""
@@ -231,4 +230,5 @@
 "2026-01-05 06:42:02","""1691008""","""globaleliteconsulting24.com""","""domain""","""botnet_cc""","""unknown""","""None""","""Unknown malware""","""""","""100""","""False""","""https://bazaar.abuse.ch/sample/a518857c5a8bdf39feb92ae310d7f296bebffbc0aa017ac05e2b138a6c73367c/""","""c2""","""0"""
 "2026-01-05 06:42:01","""1691007""","""main.vetraproject.site""","""domain""","""botnet_cc""","""unknown_stealer""","""None""","""Unknown Stealer""","""""","""100""","""False""","""https://bazaar.abuse.ch/sample/6e89d09c5be3815d91a10eb478e071d7813f1a02a18741647f1c2b35af08f335/""","""c2","Stealit"
 "2026-01-05 06:41:58","""1691041""","""top.cloudpub.ru""","""domain""","""botnet_cc""","""win.xworm""","""None""","""XWorm""","""""","""100""","""False""","""https://bazaar.abuse.ch/sample/2a6c6d3bd8f0d37255de8ddd78ce0c686b45488ca274f1c7b1588512c0327742/""","""x2","xworm"""
+
 
