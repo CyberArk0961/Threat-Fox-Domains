@@ -1,5 +1,5 @@
 "first_seen_utc","ioc_id","ioc_value","ioc_type","threat_type","fk_malware","malware_alias","malware_printable","last_seen_utc","confidence_level","reference","tags","anonymous","reporter"
-"2026-01-12 04:03:38","""1701122""","""toki.vatandasbasvuru.cfd""","""domain""","""botnet_cc""","""win.havoc""","""Havokiz""","""Havoc""","""""","""100""","""False""","""https://search.censys.io/hosts/195.24.237.166+toki.vatandasbasvuru.cfd""","""AS60223","C2"
+"2026-01-12 04:03:38","""1701122""","""nouryon.com""","""domain""","""botnet_cc""","""win.havoc""","""Havokiz""","""Havoc""","""""","""100""","""False""","""https://search.censys.io/hosts/195.24.237.166+toki.vatandasbasvuru.cfd""","""AS60223","C2"
 "2026-01-12 02:49:15","""1701118""","""hostikslu.is""","""domain""","""botnet_cc""","""win.cobalt_strike""","""Agentemis","BEACON","CobaltStrike","cobeacon""","""Cobalt Strike""","""2026-01-12 04:49:01""","""75""","""False"""
 "2026-01-12 02:11:35","""1701117""","""visa.br.com""","""domain""","""botnet_cc""","""win.asyncrat""","""None""","""AsyncRAT""","""""","""75""","""False""","""https://bazaar.abuse.ch/sample/4e7aad5aae4727d9f052d1c18e70f8936c7345c00ed3ab74cc0d59c285137afe/""","""asyncrat""","""0"""
 "2026-01-12 02:11:18","""1701116""","""hitclub.ru.com""","""domain""","""botnet_cc""","""win.asyncrat""","""None""","""AsyncRAT""","""""","""75""","""False""","""https://bazaar.abuse.ch/sample/4e7aad5aae4727d9f052d1c18e70f8936c7345c00ed3ab74cc0d59c285137afe/""","""asyncrat""","""0"""
@@ -164,3 +164,4 @@
 "2026-01-10 06:34:15","""1700290""","""docs.exitdriving.school""","""domain""","""botnet_cc""","""js.fakeupdates""","""FakeUpdate","GhoLoader","SocGholish""","""FAKEUPDATES""","""""","""100""","""True""","""https://infosec.exchange/@monitorsg/115869080320033028"""
 "2026-01-10 06:04:24","""1700294""","""ziplocker.duckdns.org""","""domain""","""botnet_cc""","""win.quasar_rat""","""CinaRAT","QuasarRAT","Yggdrasil""","""Quasar RAT""","""""","""100""","""False""","""https://tria.ge/260110-bg6shah17b"""
 "2026-01-10 06:02:51","""1700293""","""fish-needed.gl.at.ply.gg""","""domain""","""botnet_cc""","""win.xworm""","""None""","""XWorm""","""""","""100""","""False""","""https://tria.ge/260110-fnvq2aey6e""","""C2","domain"
+
